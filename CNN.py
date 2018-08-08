@@ -1,6 +1,6 @@
-#卷积神经网路
-#https://blog.csdn.net/u012871279/article/details/78036503
-#CNN
+# 卷积神经网路
+# https://blog.csdn.net/u012871279/article/details/78036503
+# CNN
 '''
 图像识别和视频问题
 时间序列信号（音频信号、文本数据）
@@ -43,53 +43,65 @@ letNet5结构：
 '''
 from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
+
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 sess = tf.InteractiveSession()
 
+
 def weight_variable(shape):
-	initial = tf.truncated_normal(shape, stddev=0.1)
-	return tf.Variable(initial)
-	#截断的正态分布，标准差0.1
-	'''
-	shape（[a, b, c, d])
-	a,b：卷积核大小
-	c：channel
-	d：卷积核个数
-	'''
+    initial = tf.truncated_normal(shape, stddev=0.1)
+    return tf.Variable(initial)
+
+
+# 截断的正态分布，标准差0.1
+'''
+shape（[a, b, c, d])
+a,b：卷积核大小
+c：channel
+d：卷积核个数
+'''
+
 
 def bias_variable(shape):
-	initial = tf.constant(0.1, shape=shape)
-	return tf.Variable(initial)
-	#（使用ReLU）偏置初始为正值0.1（避免死亡节点）
-#定义初始化函数以便复用
+    initial = tf.constant(0.1, shape=shape)
+    return tf.Variable(initial)
+
+
+# （使用ReLU）偏置初始为正值0.1（避免死亡节点）
+# 定义初始化函数以便复用
 
 def conv2d(x, W):
-	return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-	'''
-	tf.nn.conv2d：tf中的2维卷积函数
-	x：参数
-	W：卷积参数
-	（例：[5, 5, 1, 32] 
-	前两个数字：卷积核大小 
-	第三个数字：channel个数（由图片种类决定（灰度单色->1， RGB->3）
-	最后一个数字：卷积核个数
-	strides：卷积核模板移动的步长
-	padding：边界处理方式（'SAME'：边界+Padding->卷积输出和输入保持同样尺寸
-	'''
+    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+
+
+'''
+tf.nn.conv2d：tf中的2维卷积函数
+x：参数
+W：卷积参数
+（例：[5, 5, 1, 32] 
+前两个数字：卷积核大小 
+第三个数字：channel个数（由图片种类决定（灰度单色->1， RGB->3）
+最后一个数字：卷积核个数
+strides：卷积核模板移动的步长
+padding：边界处理方式（'SAME'：边界+Padding->卷积输出和输入保持同样尺寸
+'''
+
 
 def max_pool_2x2(x):
-	return tf.nn.max_pool(x, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding='SAME')
-	'''
-	最大池化
-	2X2->1X1
-	缩小图片尺寸
-	参数：
-		x：value，池化输入（feature map）（shape为[batch, height, width, channels])
-		ksize：池化窗口大小，一般为[1, height, width, 1]（batch和channels不进行池化，维度设为1）
-		strides：卷积核在每个维度的步长
-	'''
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-#定义卷积层和池化层（复用）
+
+'''
+最大池化
+2X2->1X1
+缩小图片尺寸
+参数：
+    x：value，池化输入（feature map）（shape为[batch, height, width, channels])
+    ksize：池化窗口大小，一般为[1, height, width, 1]（batch和channels不进行池化，维度设为1）
+        strides：卷积核在每个维度的步长
+    '''
+
+# 定义卷积层和池化层（复用）
 x = tf.placeholder(tf.float32, [None, 784])
 y_ = tf.placeholder(tf.float32, [None, 10])
 x_image = tf.reshape(x, [-1, 28, 28, 1])
@@ -124,7 +136,7 @@ h_pool2 = max_pool_2x2(h_conv2)
 W_fc1 = weight_variable([7 * 7 * 64, 1024])
 b_fc1 = bias_variable([1024])
 h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
-h_fc1 =tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 '''
 全连接层
 28*28 / 4*4 = 7*7
@@ -148,25 +160,25 @@ Softmax层（->概率）
 Dropout层输出
 '''
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices = [1]))
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-#定义loss和train_step
+# 定义loss和train_step
 
 correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-#定义评测准确性
+# 定义评测准确性
 
 tf.global_variables_initializer().run()
-#初始化
+# 初始化
 for i in range(20001):
-	#总训练样本100W
-	batch = mnist.train.next_batch(50)
-	if i % 100 == 0:
-		train_accuracy = accuracy.eval(feed_dict = {x: batch[0], y_: batch[1], keep_prob: 1.0})
-		#keep_prob=1：实时监测模型性能
-		print("step %d, training accuracy %g" % (i, train_accuracy))
-	train_step.run(feed_dict = {x: batch[0], y_: batch[1], keep_prob: 0.5})
-	#训练Dropout：0.5
+    # 总训练样本100W
+    batch = mnist.train.next_batch(50)
+    if i % 100 == 0:
+        train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
+        # keep_prob=1：实时监测模型性能
+        print("step %d, training accuracy %g" % (i, train_accuracy))
+    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+# 训练Dropout：0.5
 
 print("test accuracy %g" % accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 

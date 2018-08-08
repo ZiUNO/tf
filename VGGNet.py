@@ -1,8 +1,10 @@
+# VGGNet-16
 from datetime import datetime
 import math
 import time
 import tensorflow as tf
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 

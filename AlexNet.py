@@ -115,7 +115,10 @@ def time_tensorflow_run(session, target, info_string):
                 print('%s: step %d, duration = %.3f' % (datetime.now(), i - num_steps_burn_in, duration))
                 total_duration += duration
                 total_duration_squared += duration * duration
-
+    '''
+    mn 平均耗时
+    sd 平均差
+    '''
     mn = total_duration / num_batches
     vr = total_duration_squared / num_batches - mn * mn
     sd = math.sqrt(vr)
@@ -141,5 +144,3 @@ def run_benchmark():
 
 
 run_benchmark()
-
-input('Done!')

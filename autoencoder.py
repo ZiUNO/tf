@@ -122,16 +122,17 @@ def standard_scale(X_train, X_test):
 
 # 训练、测试数据进行标准化处理（0均值，1标准差）
 # 训练、测试数据都使用完全相同的scale
-
-def get_random_block_from_data(data, batch_size):
-    start_index = np.random.randint(0, len(data) - batch_size)
-    return data[start_index:(start_index + batch_size)]
-    '''
+'''
     获取随机block数据的函数:
         取一个从0到len（data）-batch_size之间的随机整数
         以随机数作为block的起始位置，顺序取到一个batch size的数据
         （属于不放回抽样）
     '''
+
+
+def get_random_block_from_data(data, batch_size):
+    start_index = np.random.randint(0, len(data) - batch_size)
+    return data[start_index:(start_index + batch_size)]
 
 
 X_train, X_test = standard_scale(mnist.train.images, mnist.test.images)
