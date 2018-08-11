@@ -1,11 +1,13 @@
 import collections
 import math
-import os
 import random
 import zipfile
 import numpy as np
 import urllib
 import tensorflow as tf
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 url = 'http://mattmahoney.net/dc/'
 
@@ -125,9 +127,9 @@ with graph.as_default():
     loss = tf.reduce_mean(tf.nn.nce_loss(
         weights=nce_weights,
         biases=nce_biases,
-        labels = train_labels,
+        labels=train_labels,
         inputs=embed,
-        num_sampled = num_sampled,
+        num_sampled=num_sampled,
         num_classes=vocabulary_size))
 
     optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
@@ -142,14 +144,14 @@ with graph.as_default():
 
 num_steps = 100001
 
-with tf.Session(graph = graph) as session:
+with tf.Session(graph=graph) as session:
     init.run()
     print('Initialized')
 
     average_loss = 0
     for step in range(num_steps):
         batch_inputs, batch_labels = generate_batch(batch_size, num_skips, skip_window)
-        feed_dict = {train_inputs:batch_inputs, train_labels:batch_labels}
+        feed_dict = {train_inputs: batch_inputs, train_labels: batch_labels}
 
         _, loss_val = session.run([optimizer, loss], feed_dict=feed_dict)
         average_loss += loss_val
@@ -157,7 +159,7 @@ with tf.Session(graph = graph) as session:
         if step % 2000 == 0:
             if step > 0:
                 average_loss /= 2000
-            print('Average loss at step ', step, ':',average_loss)
+            print('Average loss at step ', step, ':', average_loss)
             average_loss = 0
 
         if step % 10000 == 0:
