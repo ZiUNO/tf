@@ -3,35 +3,35 @@ import math
 import random
 import zipfile
 import numpy as np
-import urllib
 import tensorflow as tf
 import os
+import urllib.request
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 url = 'http://mattmahoney.net/dc/'
 
 
-def maybe_download(filename, expected_bytes):
-    if not os.path.exists(filename):
-        filename, _ = urllib.request.urlretrieve(url + filename, filename)
-    statinfo = os.stat(filename)
-    if statinfo.st_size == expected_bytes:
-        print('Found and verified', filename)
+def maybe_download(file, expected_bytes):
+    file_path = os.getcwd() + "\\src\\Word_data\\" + file
+    if not os.path.exists(file_path):
+        file, _ = urllib.request.urlretrieve(url + file, file_path)
+    stat = os.stat(file_path)
+    if stat.st_size == expected_bytes:
+        print('Found and verified', file)
     else:
-        print(statinfo.st_size)
+        print(stat.st_size)
         raise Exception(
-            'Failes to verify ' + filename + '. Can you get to it with a browser?')
-    return filename
+            'Failed to verify ' + file + '. Can you get to it with a browser?')
+    return file
 
 
 filename = maybe_download('text8.zip', 31344016)
 
 
-def read_data(filename):
-    with zipfile.ZipFile(filename) as f:
-        data = tf.compat.as_str(f.read(f.namelist()[0])).split()
-    return data
+def read_data(file):
+    with zipfile.ZipFile(os.getcwd() + "\\src\\Word_data\\" + file) as f:
+        return tf.compat.as_str(f.read(f.namelist()[0])).split()
 
 
 words = read_data(filename)
@@ -40,62 +40,81 @@ print('Data size', len(words))
 vocabulary_size = 50000
 
 
-def build_dataset(words):
-    count = [['UNK', -1]]
-    count.extend(collections.Counter(words).most_common(vocabulary_size - 1))
-    dictionary = dict()
-    for word, _ in count:
-        dictionary[word] = len(dictionary)
-    data = list()
+def build_data_set(words_data):
+    """
+    * 创建数据集合
+    :param words_data: 单词列表
+    :returns: word_code_data: 编码后的单词列表 <br /> counter: 进行计数的单词列表 <br /> diction: 字典（编码表） <br /> reverse_diction: 码值反向对应
+    """
+    counter = [['UNK', -1]]
+    counter.extend(collections.Counter(words_data).most_common(vocabulary_size - 1))
+    diction = dict()
+    for word, _ in counter:
+        # TODO 对word进行编码
+        diction[word] = len(diction)
+    word_code_data = list()
     unk_count = 0
-    for word in words:
-        if word in dictionary:
-            index = dictionary[word]
+    for word in words_data:
+        # TODO 对所有单词进行编码
+        if word in diction:
+            index = diction[word]
         else:
             index = 0
             unk_count += 1
-        data.append(index)
-    count[0][1] = unk_count
-    reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
-    return data, count, dictionary, reverse_dictionary
+        word_code_data.append(index)
+    counter[0][1] = unk_count
+    # NOTE [zip] 迭代打包每一组
+    reverse_diction = dict(zip(diction.values(), diction.keys()))
+    return word_code_data, counter, diction, reverse_diction
 
 
-data, count, dictionary, reverse_dictionary = build_dataset(words)
+data, count, dictionary, reverse_dictionary = build_data_set(words)
 
+# TODO words 变量释放
 del words
-print('Most commom words (+UNK)', count[:5])
+# TODO 打印出现最多的前5
+print('Most common words (+UNK)', count[:5])
+# TODO 打印示例数据：前10个单词的编码+相应的单词
 print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
 
 data_index = 0
 
 
-def generate_batch(batch_size, num_skips, skip_window):
+def generate_batch(batches_size, num_skip, skips_window):
+    """
+    * 获取batch数据
+    :param batches_size: batch大小
+    :param num_skip: 每个单词生成的样本数
+    :param skips_window: 单词最远可联系的距离
+    :return: batches: <br /> label:
+    """
     global data_index
-    assert batch_size % num_skips == 0
-    assert num_skips <= 2 * skip_window
-    batch = np.ndarray(shape=(batch_size), dtype=np.int32)
-    labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
-    span = 2 * skip_window + 1
+    # NOTE [assert] 断言
+    assert batches_size % num_skip == 0
+    assert num_skip <= 2 * skips_window
+    batches = np.ndarray(shape=batches_size, dtype=np.int32)
+    label = np.ndarray(shape=(batches_size, 1), dtype=np.int32)
+    span = 2 * skips_window + 1
     buffer = collections.deque(maxlen=span)
 
     for _ in range(span):
         buffer.append(data[data_index])
         data_index = (data_index + 1) % len(data)
-    for i in range(batch_size // num_skips):
-        target = skip_window
-        targets_to_avoid = [skip_window]
-        for j in range(num_skips):
+    for i in range(batches_size // num_skip):
+        target = skips_window
+        targets_to_avoid = [skips_window]
+        for j in range(num_skip):
             while target in targets_to_avoid:
                 target = random.randint(0, span - 1)
             targets_to_avoid.append(target)
-            batch[i * num_skips + j] = buffer[skip_window]
-            labels[i * num_skips + j, 0] = buffer[target]
+            batches[i * num_skip + j] = buffer[skips_window]
+            label[i * num_skip + j, 0] = buffer[target]
         buffer.append(data[data_index])
         data_index = (data_index + 1) % len(data)
-    return batch, labels
+    return batches, label
 
 
-batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
+batch, labels = generate_batch(batches_size=8, num_skip=2, skips_window=1)
 for i in range(8):
     print(batch[i], reverse_dictionary[batch[i]], '->', labels[i, 0])
 
@@ -113,7 +132,7 @@ graph = tf.Graph()
 with graph.as_default():
     train_inputs = tf.placeholder(tf.int32, shape=[batch_size])
     train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
-    valid_dataset = tf.constant(valid_examples, dtype=tf.int32)
+    valid_data_set = tf.constant(valid_examples, dtype=tf.int32)
 
     with tf.device('/cpu:0'):
         embeddings = tf.Variable(
@@ -137,7 +156,7 @@ with graph.as_default():
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
     normalizer_embeddings = embeddings / norm
     valid_embeddings = tf.nn.embedding_lookup(
-        normalizer_embeddings, valid_dataset)
+        normalizer_embeddings, valid_data_set)
     similarity = tf.matmul(valid_embeddings, normalizer_embeddings, transpose_b=True)
 
     init = tf.global_variables_initializer()
@@ -164,9 +183,11 @@ with tf.Session(graph=graph) as session:
 
         if step % 10000 == 0:
             sim = similarity.eval()
+            nearest = 0
+            top_k = 8
+            log_str = 0
             for i in range(valid_size):
                 valid_word = reverse_dictionary[valid_examples[i]]
-                top_k = 8
                 nearest = (-sim[i, :]).argsort()[1:top_k + 1]
                 log_str = 'Nearest to %s:' % valid_word
             for k in range(top_k):
