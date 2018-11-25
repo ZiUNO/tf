@@ -1,9 +1,3 @@
-# tf note
-# training set 训练集 60000
-# test set 测试集 10000
-# 28*28=784
-# python 3.6
-# 注释均在下方
 from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
 

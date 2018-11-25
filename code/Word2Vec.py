@@ -44,7 +44,11 @@ def build_data_set(words_data):
     """
     * 创建数据集合
     :param words_data: 单词列表
-    :returns: word_code_data: 编码后的单词列表 <br /> counter: 进行计数的单词列表 <br /> diction: 字典（编码表） <br /> reverse_diction: 码值反向对应
+    :returns:
+        word_code_data: 编码后的单词列表 <br />
+        counter: 进行计数的单词列表 <br />
+        diction: 字典（编码表） <br />
+        reverse_diction: 码值反向对应
     """
     counter = [['UNK', -1]]
     counter.extend(collections.Counter(words_data).most_common(vocabulary_size - 1))
@@ -86,7 +90,9 @@ def generate_batch(batches_size, num_skip, skips_window):
     :param batches_size: batch大小
     :param num_skip: 每个单词生成的样本数
     :param skips_window: 单词最远可联系的距离
-    :return: batches: <br /> label:
+    :returns:
+        batches:  <br />
+        label:
     """
     global data_index
     # NOTE [assert] 断言
@@ -94,7 +100,9 @@ def generate_batch(batches_size, num_skip, skips_window):
     assert num_skip <= 2 * skips_window
     batches = np.ndarray(shape=batches_size, dtype=np.int32)
     label = np.ndarray(shape=(batches_size, 1), dtype=np.int32)
+    # NOTE [span] 为某个单词创建相关样本时会用到的单词数量（单词本身+前后单词）
     span = 2 * skips_window + 1
+    # NOTE [buffer] 大小为span的双向队列
     buffer = collections.deque(maxlen=span)
 
     for _ in range(span):

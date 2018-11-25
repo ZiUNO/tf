@@ -1,4 +1,3 @@
-# tf note
 # training set 训练集 60000
 # test set 测试集 10000
 # 28*28=784
